@@ -8,7 +8,7 @@ pygame.key.set_repeat(200, 70)
 FPS = 120
 WIDTH = 1600
 HEIGHT = 900
-STEP = 20
+STEP = 10
 ENEMY_STEP_ON_X = []
 ENEMY_STEP_ON_Y = []
 
@@ -113,16 +113,22 @@ def generate_level(level):
 
             elif level[y][x] == '&':
                 walking_enemy_on_x.append(WalkingEnemyOnX('archer', x, y))
-                ENEMY_STEP_ON_X.append(5)
+                ENEMY_STEP_ON_X.append(3)
+            elif level[y][x] == 'M':
+                walking_enemy_on_x.append(WalkingEnemyOnX('horse_rider', x, y))
+                ENEMY_STEP_ON_X.append(7)
             elif level[y][x] == '8':
                 walking_enemy_on_x.append(WalkingEnemyOnX('rifleman', x, y))
-                ENEMY_STEP_ON_X.append(5)
+                ENEMY_STEP_ON_X.append(3)
+            elif level[y][x] == 'W':
+                walking_enemy_on_x.append(WalkingEnemyOnX('bycicle_rider', x, y))
+                ENEMY_STEP_ON_X.append(7)
             elif level[y][x] == '%':
                 walking_enemy_on_y.append(WalkingEnemyOnY('archer', x, y))
-                ENEMY_STEP_ON_Y.append(5)
+                ENEMY_STEP_ON_Y.append(3)
             elif level[y][x] == '|':
                 walking_enemy_on_y.append(WalkingEnemyOnY('rifleman', x, y))
-                ENEMY_STEP_ON_Y.append(5)
+                ENEMY_STEP_ON_Y.append(3)
 
             elif level[y][x] == '@':
                 new_player = Player(x, y)
@@ -174,9 +180,9 @@ def screen_fill():
 
     tiles_group.draw(screen)
     desert_tiles_group.draw(screen)
-    tiles_with_trees_group.draw(screen)
     water_tiles_group.draw(screen)
     road_tiles_group.draw(screen)
+    tiles_with_trees_group.draw(screen)
     danger_enemy_group.draw(screen)
     enemy_group.draw(screen)
     player_group.draw(screen)
