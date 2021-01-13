@@ -9,7 +9,8 @@ FPS = 120
 WIDTH = 1600
 HEIGHT = 900
 STEP = 20
-ENEMY_STEP = 5
+ENEMY_STEP_ON_X = []
+ENEMY_STEP_ON_Y = []
 
 dead = False
 game_over_variable = False
@@ -31,6 +32,7 @@ tiles_group = pygame.sprite.Group()
 desert_tiles_group = pygame.sprite.Group()
 tiles_with_trees_group = pygame.sprite.Group()
 water_tiles_group = pygame.sprite.Group()
+road_tiles_group = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
 danger_enemy_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
@@ -64,39 +66,68 @@ def load_level(filename):
 
 
 def generate_level(level):
-    new_player, x, y, walk_enemy = None, None, None, None
+    new_player, x, y, walking_enemy_on_x, walking_enemy_on_y = None, None, None, [], []
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
                 Tile('grass', x, y)
+
             elif level[y][x] == '[':
                 WaterTile('top_water', x, y)
             elif level[y][x] == '=':
                 WaterTile('middle_water', x, y)
             elif level[y][x] == ']':
                 WaterTile('bottom_water', x, y)
+
+            elif level[y][x] == '<':
+                RoadTile('top_desert_road', x, y)
+            elif level[y][x] == '+':
+                RoadTile('middle_road', x, y)
+            elif level[y][x] == '>':
+                RoadTile('bottom_desert_road', x, y)
+            elif level[y][x] == '{':
+                RoadTile('top_grass_road', x, y)
+            elif level[y][x] == '-':
+                RoadTile('middle_road', x, y)
+            elif level[y][x] == '}':
+                RoadTile('bottom_grass_road', x, y)
+
             elif level[y][x] == '`':
                 DesertTile('sand', x, y)
             elif level[y][x] == '"':
                 DesertTile('stones', x, y)
+
             elif level[y][x] == '#':
                 TileWithTrees('tree_1', x, y)
             elif level[y][x] == '*':
                 TileWithTrees('tree_2', x, y)
+
             elif level[y][x] == '!':
                 Enemy('archer', x, y)
             elif level[y][x] == 'm':
                 Enemy('horse_rider', x, y)
             elif level[y][x] == '0':
-                DangerousEnemy('rifleman', x, y)
+                Enemy('rifleman', x, y)
             elif level[y][x] == 'w':
-                DangerousEnemy('bycicle_rider', x, y)
+                Enemy('bycicle_rider', x, y)
+
+            elif level[y][x] == '&':
+                walking_enemy_on_x.append(WalkingEnemyOnX('archer', x, y))
+                ENEMY_STEP_ON_X.append(5)
+            elif level[y][x] == '8':
+                walking_enemy_on_x.append(WalkingEnemyOnX('rifleman', x, y))
+                ENEMY_STEP_ON_X.append(5)
+            elif level[y][x] == '%':
+                walking_enemy_on_y.append(WalkingEnemyOnY('archer', x, y))
+                ENEMY_STEP_ON_Y.append(5)
+            elif level[y][x] == '|':
+                walking_enemy_on_y.append(WalkingEnemyOnY('rifleman', x, y))
+                ENEMY_STEP_ON_Y.append(5)
+
             elif level[y][x] == '@':
                 new_player = Player(x, y)
 
-            elif level[y][x] == '&':
-                walk_enemy = WalkingEnemy('rifleman', x, y)
-    return new_player, x, y, walk_enemy
+    return new_player, x, y, walking_enemy_on_x, walking_enemy_on_y
 
 
 def terminate():
@@ -145,6 +176,7 @@ def screen_fill():
     desert_tiles_group.draw(screen)
     tiles_with_trees_group.draw(screen)
     water_tiles_group.draw(screen)
+    road_tiles_group.draw(screen)
     danger_enemy_group.draw(screen)
     enemy_group.draw(screen)
     player_group.draw(screen)
@@ -173,9 +205,11 @@ def screen_fill():
 
 
 tile_images = {'grass': load_image('grass.png'), 'tree_1': load_image('Tree1.png'), 'tree_2': load_image('Tree2.png'),
-               'sand': load_image('sand.png'), 'stones': load_image('sand and stones.png'),
+               'sand': load_image('sand.png'), 'stones': load_image('Sand_and_stones.png'),
                'top_water': load_image('Water1.png'), 'middle_water': load_image('Water3.png'),
-               'bottom_water': load_image('Water2.png')}
+               'bottom_water': load_image('Water2.png'), 'top_desert_road': load_image('Desert_Road1.png'),
+               'middle_road': load_image('Road.png'), 'bottom_desert_road': load_image('Desert_Road2.png'),
+               'top_grass_road': load_image('Grass_Road1.png'), 'bottom_grass_road': load_image('Grass_Road2.png')}
 player_image = load_image('Hero.png')
 enemy_image = {'archer': load_image('Archer.png'), 'horse_rider': load_image('Horse.png'),
                'rifleman': load_image('Rifleman.png'), 'bycicle_rider': load_image('Motobyke.png')}
@@ -209,6 +243,13 @@ class WaterTile(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
 
 
+class RoadTile(pygame.sprite.Sprite):
+    def __init__(self, tile_type, pos_x, pos_y):
+        super().__init__(road_tiles_group, all_sprites)
+        self.image = tile_images[tile_type]
+        self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
+
+
 class TileWithTrees(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
         super().__init__(tiles_with_trees_group, all_sprites)
@@ -216,33 +257,53 @@ class TileWithTrees(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
 
 
-class WalkingEnemy(pygame.sprite.Sprite):
+class WalkingEnemyOnX(pygame.sprite.Sprite):
     def __init__(self, enemy_type, pos_x, pos_y):
-        super().__init__(enemy_group, all_sprites)
-        self.image = enemy_image[enemy_type]
-        self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
+        if enemy_type == 'archer' or enemy_type == 'horse_rider':
+            super().__init__(enemy_group, all_sprites)
+            self.image = enemy_image[enemy_type]
+            self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
+        elif enemy_type == 'rifleman' or enemy_type == 'bycicle_rider':
+            super().__init__(danger_enemy_group, all_sprites)
+            self.image = enemy_image[enemy_type]
+            self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
 
-    def walk(self):
-        global ENEMY_STEP
+    def walk_x(self):
         if pygame.sprite.groupcollide(enemy_group, water_tiles_group, False, False) or \
-                pygame.sprite.groupcollide(enemy_group, tiles_with_trees_group, False, False):
-            ENEMY_STEP = -ENEMY_STEP
+                pygame.sprite.spritecollide(walking_enemy_on_x[i], tiles_with_trees_group, False):
+            ENEMY_STEP_ON_X[i] = -ENEMY_STEP_ON_X[i]
             self.image = pygame.transform.flip(self.image, 1, 0)
-        self.rect.x -= ENEMY_STEP
+        self.rect.x -= ENEMY_STEP_ON_X[i]
 
 
-class DangerousEnemy(pygame.sprite.Sprite):
+class WalkingEnemyOnY(pygame.sprite.Sprite):
     def __init__(self, enemy_type, pos_x, pos_y):
-        super().__init__(danger_enemy_group, all_sprites)
-        self.image = enemy_image[enemy_type]
-        self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
+        if enemy_type == 'archer' or enemy_type == 'horse_rider':
+            super().__init__(enemy_group, all_sprites)
+            self.image = enemy_image[enemy_type]
+            self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
+        elif enemy_type == 'rifleman' or enemy_type == 'bycicle_rider':
+            super().__init__(danger_enemy_group, all_sprites)
+            self.image = enemy_image[enemy_type]
+            self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
+
+    def walk_y(self):
+        if pygame.sprite.groupcollide(enemy_group, water_tiles_group, False, False) or \
+                pygame.sprite.spritecollide(walking_enemy_on_y[i], tiles_with_trees_group, False):
+            ENEMY_STEP_ON_Y[i] = -ENEMY_STEP_ON_Y[i]
+        self.rect.y -= ENEMY_STEP_ON_Y[i]
 
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, enemy_type, pos_x, pos_y):
-        super().__init__(enemy_group, all_sprites)
-        self.image = enemy_image[enemy_type]
-        self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
+        if enemy_type == 'archer' or enemy_type == 'horse_rider':
+            super().__init__(enemy_group, all_sprites)
+            self.image = enemy_image[enemy_type]
+            self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
+        elif enemy_type == 'rifleman' or enemy_type == 'bycicle_rider':
+            super().__init__(danger_enemy_group, all_sprites)
+            self.image = enemy_image[enemy_type]
+            self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
 
 
 class Player(pygame.sprite.Sprite):
@@ -283,7 +344,7 @@ class Camera:
 
 start_screen()
 
-player, level_x, level_y, walker = generate_level(load_level('levelex.txt'))
+player, level_x, level_y, walking_enemy_on_x, walking_enemy_on_y = generate_level(load_level('levelex.txt'))
 generate_level(load_level('enemies.txt'))
 camera = Camera((level_x, level_y))
 
@@ -325,7 +386,11 @@ while running:
                         pygame.sprite.groupcollide(player_group, tiles_with_trees_group, False, False):
                     player.rect.y -= STEP
 
-    walker.walk()
+    for i in range(len(walking_enemy_on_x)):
+        walking_enemy_on_x[i].walk_x()
+
+    for i in range(len(walking_enemy_on_y)):
+        walking_enemy_on_y[i].walk_y()
 
     camera.update(player)
 
