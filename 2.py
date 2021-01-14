@@ -8,7 +8,7 @@ pygame.key.set_repeat(200, 70)
 FPS = 120
 WIDTH = 1600
 HEIGHT = 900
-STEP = 10
+STEP = 20
 ENEMY_STEP_ON_X = []
 ENEMY_STEP_ON_Y = []
 
@@ -113,22 +113,22 @@ def generate_level(level):
 
             elif level[y][x] == '&':
                 walking_enemy_on_x.append(WalkingEnemyOnX('archer', x, y))
-                ENEMY_STEP_ON_X.append(3)
+                ENEMY_STEP_ON_X.append(5)
             elif level[y][x] == 'M':
                 walking_enemy_on_x.append(WalkingEnemyOnX('horse_rider', x, y))
-                ENEMY_STEP_ON_X.append(7)
+                ENEMY_STEP_ON_X.append(15)
             elif level[y][x] == '8':
                 walking_enemy_on_x.append(WalkingEnemyOnX('rifleman', x, y))
-                ENEMY_STEP_ON_X.append(3)
+                ENEMY_STEP_ON_X.append(5)
             elif level[y][x] == 'W':
                 walking_enemy_on_x.append(WalkingEnemyOnX('bycicle_rider', x, y))
-                ENEMY_STEP_ON_X.append(7)
+                ENEMY_STEP_ON_X.append(15)
             elif level[y][x] == '%':
                 walking_enemy_on_y.append(WalkingEnemyOnY('archer', x, y))
-                ENEMY_STEP_ON_Y.append(3)
+                ENEMY_STEP_ON_Y.append(5)
             elif level[y][x] == '|':
                 walking_enemy_on_y.append(WalkingEnemyOnY('rifleman', x, y))
-                ENEMY_STEP_ON_Y.append(3)
+                ENEMY_STEP_ON_Y.append(5)
 
             elif level[y][x] == '@':
                 new_player = Player(x, y)
@@ -279,7 +279,9 @@ class WalkingEnemyOnX(pygame.sprite.Sprite):
                 pygame.sprite.spritecollide(walking_enemy_on_x[i], tiles_with_trees_group, False):
             ENEMY_STEP_ON_X[i] = -ENEMY_STEP_ON_X[i]
             self.image = pygame.transform.flip(self.image, 1, 0)
-        self.rect.x -= ENEMY_STEP_ON_X[i]
+        if 1550 >= self.rect.x >= -65 and 1000 >= self.rect.y >= -10:
+            self.rect.x -= ENEMY_STEP_ON_X[i]
+        print(self.rect.x)
 
 
 class WalkingEnemyOnY(pygame.sprite.Sprite):
@@ -297,7 +299,8 @@ class WalkingEnemyOnY(pygame.sprite.Sprite):
         if pygame.sprite.groupcollide(enemy_group, water_tiles_group, False, False) or \
                 pygame.sprite.spritecollide(walking_enemy_on_y[i], tiles_with_trees_group, False):
             ENEMY_STEP_ON_Y[i] = -ENEMY_STEP_ON_Y[i]
-        self.rect.y -= ENEMY_STEP_ON_Y[i]
+        if 1700 >= self.rect.x >= -100 and 1800 >= self.rect.y >= -70:
+            self.rect.y -= ENEMY_STEP_ON_Y[i]
 
 
 class Enemy(pygame.sprite.Sprite):
