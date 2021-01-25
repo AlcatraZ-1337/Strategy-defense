@@ -13,11 +13,23 @@ ENEMY_STEP_ON_X = []
 ENEMY_STEP_ON_Y = []
 
 dead = False
+win = False
 shoot = False
 enemy_shoot = False
 game_over_variable = False
+congratulation_variable = False
+escape_pressed = -1
+tab_pressed = -1
+dialogue_1_string_number = 1
+dialogue_2_string_number = 1
+quest_available = False
+commanders_count = 3
+
+dialogue_1_enabled = False
+dialogue_2_enabled = False
 
 arrow_moving = 'R'
+captain_rotation = None
 
 pygame.display.set_caption("Strategy Defense")
 pygame.display.set_icon(pygame.image.load("image/icon.png"))
@@ -41,9 +53,10 @@ water_tiles_group = pygame.sprite.Group()
 road_tiles_group = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
 danger_enemy_group = pygame.sprite.Group()
+captain_enemy_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
+teammates_group = pygame.sprite.Group()
 bullet_group = pygame.sprite.Group()
-enemy_bullet_group = pygame.sprite.Group()
 
 
 def load_image(name, color_key=None):
@@ -74,7 +87,7 @@ def load_level(filename):
 
 
 def generate_level(level):
-    new_player, x, y, walking_enemy_on_x, walking_enemy_on_y, captains = None, None, None, [], [], []
+    new_player, x, y, walking_enemy_on_x, walking_enemy_on_y, captains, mage = None, None, None, [], [], [], None
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
@@ -143,7 +156,10 @@ def generate_level(level):
             elif level[y][x] == '@':
                 new_player = Player(x, y)
 
-    return new_player, x, y, walking_enemy_on_x, walking_enemy_on_y, captains
+            elif level[y][x] == 'H':
+                mage = Teammates(x, y)
+
+    return new_player, x, y, walking_enemy_on_x, walking_enemy_on_y, captains, mage
 
 
 def terminate():
@@ -186,6 +202,8 @@ def start_screen():
 
 def screen_fill():
     global game_over_variable
+    global congratulation_variable
+    global quest_available
     screen.fill(pygame.Color(0, 0, 0))
 
     tiles_group.draw(screen)
@@ -194,13 +212,106 @@ def screen_fill():
     road_tiles_group.draw(screen)
     tiles_with_trees_group.draw(screen)
     danger_enemy_group.draw(screen)
+    captain_enemy_group.draw(screen)
     enemy_group.draw(screen)
     player_group.draw(screen)
+    teammates_group.draw(screen)
 
     screen.blit(Tree_ground, (0, 0))
     screen.blit(Tree_ground3, (0, 0))
     screen.blit(Tree_ground2, (1501, 0))
     screen.blit(Tree_ground4, (0, 800))
+
+    if escape_pressed > 0:
+        intro_text = ["Инструкция:",
+                      "Ходить: W, A, S, D и стрелки",
+                      "Стрелять из лука: Пробел",
+                      "Открыть список заданий: TAB",
+                      "Перезапустить музыку: Z"]
+
+        font = pygame.font.SysFont('Haettenschweiler', 30)
+        pygame.draw.rect(screen, 'black', ((590, 220), (395, 520)))
+        pygame.draw.rect(screen, 'grey', ((600, 230), (375, 500)))
+
+        text_coord = 245
+        for line in intro_text:
+            string_rendered = font.render(line, 1, pygame.Color('black'))
+            instruction_rect = string_rendered.get_rect()
+            text_coord += 10
+            instruction_rect.top = text_coord
+            instruction_rect.x = 620
+            text_coord += instruction_rect.height
+            screen.blit(string_rendered, instruction_rect)
+
+    if tab_pressed > 0:
+        intro_text = ["Текущие задания:",
+                      "Убить трёх командиров"]
+
+        font = pygame.font.SysFont('Haettenschweiler', 30)
+        pygame.draw.rect(screen, 'black', ((590, 220), (395, 520)))
+        pygame.draw.rect(screen, 'grey', ((600, 230), (375, 500)))
+
+        text_coord = 245
+        for line in intro_text:
+            string_rendered = font.render(line, 1, pygame.Color('black'))
+            instruction_rect = string_rendered.get_rect()
+            text_coord += 10
+            instruction_rect.top = text_coord
+            instruction_rect.x = 620
+            text_coord += instruction_rect.height
+            if quest_available or line == "Текущие задания:":
+                screen.blit(string_rendered, instruction_rect)
+            if not quest_available and line != "Текущие задания:":
+                string_rendered = font.render("Пусто", 1, pygame.Color('black'))
+                screen.blit(string_rendered, instruction_rect)
+
+    if dialogue_1_enabled:
+        intro_text = ("- Привет.", "- Приятно увидеть в этом лесу заблудшего путника.",
+                      "- Но я полагаю, ты пришёл сюда не ради прогулки по лесу?",
+                      "- Если да, то я думаю мы сможем помочь друг другу.",
+                      "- Видишь ли... В лес пришли войска короля Стардокса.",
+                      "- Я предлагаю тебе разобраться с тремя командирами.",
+                      "- Когда закончишь с ними, возвращайся ко мне.",
+                      "- Удачи тебе путник!")
+
+        font = pygame.font.SysFont('Haettenschweiler', 35)
+        try:
+            string_rendered = font.render(intro_text[dialogue_1_string_number], 1, pygame.Color('black'))
+            text_after_dead = pygame.font.SysFont('Calibri', 30).render('Нажмите пробел, чтобы продолжить диалог', 1,
+                                                                        pygame.Color('black'))
+            pygame.draw.rect(screen, 'black', ((470, 220), (750, 520)))
+            pygame.draw.rect(screen, 'grey', ((480, 230), (730, 500)))
+            screen.blit(text_after_dead, (490, 700))
+            screen.blit(string_rendered, (490, 300))
+            screen.blit(string_rendered, (490, 300))
+
+            quest_available = True
+
+        except IndexError:
+            pass
+
+    if dialogue_2_enabled:
+        intro_text = ("Ты снова пришёл!",
+                      "Полагаю, ты выполнил мою просьбу?",
+                      "Отлично, теперь в этих лесах будет спокойней.",
+                      "Спасибо тебе путник.",
+                      "Лёгкой тебе дороги!")
+
+        font = pygame.font.SysFont('Haettenschweiler', 40)
+        try:
+            string_rendered = font.render(intro_text[dialogue_2_string_number], 1, pygame.Color('black'))
+            text_after_dead = pygame.font.SysFont('Calibri', 30).render('Нажмите пробел, чтобы продолжить диалог', 1,
+                                                                        pygame.Color('black'))
+            pygame.draw.rect(screen, 'black', ((470, 220), (750, 520)))
+            pygame.draw.rect(screen, 'grey', ((480, 230), (730, 500)))
+            screen.blit(text_after_dead, (490, 700))
+            screen.blit(string_rendered, (490, 300))
+            screen.blit(string_rendered, (490, 300))
+
+            quest_available = True
+
+        except IndexError:
+            pass
 
     if dead:
         text_after_dead = pygame.font.SysFont('Calibri', 80).render('Нажмите пробел, чтобы закончить', 1,
@@ -213,6 +324,21 @@ def screen_fill():
             screen.blit(Game_over_picture, (160, 100))
             game_over_variable = False
         screen.blit(text_after_dead, (215, 700))
+        clock.tick(5)
+
+    if win:
+        text_after_win = pygame.font.SysFont('Calibri', 80).render('Нажмите Esc, чтобы закончить', 1,
+                                                                   pygame.Color('white'))
+        congratulation = pygame.font.SysFont('Haettenschweiler', 250).render('CONGRATULATION', 1,
+                                                                             pygame.Color('white'))
+        screen.fill(pygame.Color(0, 0, 0))
+        if not congratulation_variable:
+            screen.fill(pygame.Color(0, 0, 0))
+            congratulation_variable = True
+        else:
+            screen.blit(congratulation, (140, 305))
+            congratulation_variable = False
+        screen.blit(text_after_win, (270, 700))
         clock.tick(5)
 
     pygame.display.flip()
@@ -230,6 +356,7 @@ player_image = load_image('Hero.png')
 enemy_image = {'archer': load_image('Archer.png'), 'horse_rider': load_image('Horse.png'),
                'rifleman': load_image('Rifleman.png'), 'bycicle_rider': load_image('Motobyke.png'),
                'captain': load_image('captain.png')}
+teammates_image = load_image('Mage.png')
 bullet_image = load_image('Arrow.png')
 Tree_ground = load_image('Treeground.png')
 Tree_ground2 = load_image('Treeground2.png')
@@ -325,14 +452,15 @@ class Enemy(pygame.sprite.Sprite):
             self.image = enemy_image[enemy_type]
             self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
         elif enemy_type == 'captain':
-            super().__init__(danger_enemy_group, all_sprites)
+            super().__init__(captain_enemy_group, all_sprites)
             self.image = enemy_image[enemy_type]
             self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
 
-    def captains_shoot(self):
-        bullet = EnemyBullet(self.rect.x, self.rect.y)
-        all_sprites.add(bullet)
-        enemy_bullet_group.add(bullet)
+    def captains_update(self):
+        if captain_rotation == 'L':
+            self.image = pygame.transform.flip(enemy_image['captain'], 1, 0)
+        elif captain_rotation == 'R':
+            self.image = pygame.transform.flip(enemy_image['captain'], 0, 0)
 
 
 class Player(pygame.sprite.Sprite):
@@ -351,6 +479,13 @@ class Player(pygame.sprite.Sprite):
         bullet = Bullet(self.rect.x, self.rect.y)
         all_sprites.add(bullet)
         bullet_group.add(bullet)
+
+
+class Teammates(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(teammates_group, all_sprites)
+        self.image = teammates_image
+        self.rect = self.image.get_rect().move(tile_width * pos_x + 15, tile_height * pos_y + 5)
 
 
 class Bullet(pygame.sprite.Sprite):
@@ -380,20 +515,6 @@ class Bullet(pygame.sprite.Sprite):
             self.last_direction = 'L'
 
 
-class EnemyBullet(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y):
-        super().__init__(danger_enemy_group, all_sprites)
-        self.image = bullet_image
-        self.rect = self.image.get_rect()
-        self.rect.x = pos_x
-        self.rect.y = pos_y + 60
-        self.speedx = 20
-
-    def update(self):
-        self.image = pygame.transform.flip(bullet_image, 1, 0)
-        self.rect.x -= self.speedx
-
-
 class Camera:
     def __init__(self, field_size):
         self.dx = 0
@@ -419,8 +540,9 @@ class Camera:
 
 start_screen()
 
-player, level_x, level_y, walking_enemy_on_x, walking_enemy_on_y, captains = generate_level(load_level('levelex.txt'))
-generate_level(load_level('enemies.txt'))
+player, level_x, level_y, walking_enemy_on_x, walking_enemy_on_y, captains, teammate_mage \
+    = generate_level(load_level('first_layer.txt'))
+generate_level(load_level('second_layer.txt'))
 camera = Camera((level_x, level_y))
 
 music.play().set_volume(0.25)
@@ -435,12 +557,25 @@ while running:
         elif event.type == pygame.KEYDOWN and dead:
             if event.key == pygame.K_SPACE:
                 running = False
-        elif event.type == pygame.KEYDOWN and not dead:
-            if event.key == pygame.K_SPACE:
+        elif event.type == pygame.KEYDOWN and win:
+            if event.key == pygame.K_ESCAPE:
+                running = False
+        elif event.type == pygame.KEYDOWN and not dead and not win:
+            if event.key == pygame.K_ESCAPE:
+                escape_pressed *= -1
+            if event.key == pygame.K_SPACE and not dialogue_1_enabled and not dialogue_2_enabled:
                 if not shoot:
                     player.shoot()
                     arrow_throw.play().set_volume(0.25)
                     shoot = True
+            if event.key == pygame.K_SPACE and dialogue_1_enabled:
+                dialogue_1_string_number += 1
+            if event.key == pygame.K_SPACE and dialogue_2_enabled:
+                dialogue_2_string_number += 1
+
+            if event.key == pygame.K_TAB:
+                tab_pressed *= -1
+
             if event.key == pygame.K_a or event.key == pygame.K_LEFT:
                 player.rect.x -= STEP
                 moving = 'L'
@@ -468,10 +603,19 @@ while running:
                         pygame.sprite.groupcollide(player_group, tiles_with_trees_group, False, False):
                     player.rect.y -= STEP
 
+            if event.key == pygame.K_z:
+                music.stop()
+                music.play().set_volume(0.25)
+
     for i in range(len(captains)):
-        if captains[i].rect.y + 53 > player.rect.y > captains[i].rect.y - 53 and not enemy_shoot:
-            captains[i].captains_shoot()
-            enemy_shoot = True
+        if captains[i].rect.y + 53 > player.rect.y > captains[i].rect.y - 53 and not enemy_shoot and not dead and \
+                not win:
+            if captains[i].rect.x <= 767:
+                captain_rotation = 'L'
+            elif captains[i].rect.x >= 767:
+                captain_rotation = 'R'
+            if -25 < captains[i].rect.x < 1575:
+                captains[i].captains_update()
 
     for i in range(len(walking_enemy_on_x)):
         walking_enemy_on_x[i].walk_x()
@@ -482,12 +626,9 @@ while running:
     camera.update(player)
 
     bullet_group.update(arrow_moving)
-    enemy_bullet_group.update()
 
     if not bullet_group:
         shoot = False
-    if not enemy_bullet_group:
-        enemy_shoot = False
 
     if pygame.sprite.groupcollide(bullet_group, enemy_group, True, True):
         dead_sound.play().set_volume(0.25)
@@ -495,18 +636,16 @@ while running:
         arrow_collide_sprite.play().set_volume(0.25)
     elif pygame.sprite.groupcollide(bullet_group, tiles_with_trees_group, True, False):
         arrow_collide_sprite.play().set_volume(0.25)
-
-    if pygame.sprite.groupcollide(enemy_bullet_group, enemy_group, True, False):
+    elif pygame.sprite.groupcollide(bullet_group, teammates_group, True, False):
         arrow_collide_sprite.play().set_volume(0.25)
-    elif pygame.sprite.groupcollide(enemy_bullet_group, tiles_with_trees_group, True, False):
+    elif pygame.sprite.groupcollide(bullet_group, captain_enemy_group, True, False):
         arrow_collide_sprite.play().set_volume(0.25)
-    elif pygame.sprite.groupcollide(enemy_bullet_group, player_group, True, True):
-        music.stop()
-        game_over.play().set_volume(0.25)
-        dead = True
 
     if pygame.sprite.groupcollide(player_group, enemy_group, False, True):
         dead_sound.play().set_volume(0.25)
+    elif pygame.sprite.groupcollide(player_group, captain_enemy_group, False, True):
+        dead_sound.play().set_volume(0.25)
+        commanders_count -= 1
     elif pygame.sprite.groupcollide(player_group, danger_enemy_group, True, False):
         music.stop()
         game_over.play().set_volume(0.25)
@@ -516,5 +655,31 @@ while running:
         camera.apply(sprite)
 
     screen_fill()
+
+    if pygame.sprite.groupcollide(player_group, teammates_group, False, False):
+        if dialogue_1_string_number <= 7 and commanders_count != 0:
+            dialogue_1_enabled = True
+        elif dialogue_1_string_number == 8:
+            dialogue_1_enabled = False
+        if dialogue_2_string_number <= 5 and not dialogue_1_enabled and commanders_count == 0:
+            dialogue_2_enabled = True
+        elif dialogue_2_string_number == 6:
+            dialogue_2_enabled = False
+
+    if not pygame.sprite.groupcollide(player_group, teammates_group, False, False):
+        if dialogue_1_string_number != 7 and commanders_count != 0:
+            dialogue_1_enabled = False
+            dialogue_1_string_number = 0
+        if dialogue_2_string_number != 5 and not dialogue_1_enabled and commanders_count == 0:
+            dialogue_2_enabled = False
+            dialogue_2_string_number = 0
+
+    if commanders_count == 0:
+        quest_available = False
+
+    if dialogue_2_string_number == 5 and not win:
+        music.stop()
+        game_over.play().set_volume(0.25)
+        win = True
 
 terminate()
