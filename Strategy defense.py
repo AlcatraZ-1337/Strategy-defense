@@ -216,6 +216,7 @@ def screen_fill():
     enemy_group.draw(screen)
     player_group.draw(screen)
     teammates_group.draw(screen)
+    bullet_group.draw(screen)
 
     screen.blit(Tree_ground, (0, 0))
     screen.blit(Tree_ground3, (0, 0))
@@ -383,7 +384,7 @@ class DesertTile(pygame.sprite.Sprite):
 
 class WaterTile(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
-        super().__init__(tiles_with_trees_group, all_sprites)
+        super().__init__(water_tiles_group, all_sprites)
         self.image = tile_images[tile_type]
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
 
@@ -490,7 +491,7 @@ class Teammates(pygame.sprite.Sprite):
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
-        super().__init__(player_group, all_sprites)
+        super().__init__(bullet_group, all_sprites)
         self.image = bullet_image
         self.rect = self.image.get_rect()
         self.rect.x = pos_x
@@ -637,6 +638,8 @@ while running:
     elif pygame.sprite.groupcollide(bullet_group, tiles_with_trees_group, True, False):
         arrow_collide_sprite.play().set_volume(0.25)
     elif pygame.sprite.groupcollide(bullet_group, teammates_group, True, False):
+        arrow_collide_sprite.play().set_volume(0.25)
+    elif pygame.sprite.groupcollide(bullet_group, water_tiles_group, True, False):
         arrow_collide_sprite.play().set_volume(0.25)
     elif pygame.sprite.groupcollide(bullet_group, captain_enemy_group, True, False):
         arrow_collide_sprite.play().set_volume(0.25)
