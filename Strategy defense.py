@@ -578,7 +578,8 @@ while running:
             if event.key == pygame.K_TAB:
                 tab_pressed *= -1
 
-            if event.key == pygame.K_a or event.key == pygame.K_LEFT:
+            if (event.key == pygame.K_a or event.key == pygame.K_LEFT) and not \
+                    (dialogue_1_enabled or dialogue_2_enabled):
                 player.rect.x -= STEP
                 moving = 'L'
                 arrow_moving = 'L'
@@ -586,7 +587,8 @@ while running:
                 if pygame.sprite.groupcollide(player_group, water_tiles_group, False, False) or \
                         pygame.sprite.groupcollide(player_group, tiles_with_trees_group, False, False):
                     player.rect.x += STEP
-            if event.key == pygame.K_d or event.key == pygame.K_RIGHT:
+            elif (event.key == pygame.K_d or event.key == pygame.K_RIGHT) and not \
+                    (dialogue_1_enabled or dialogue_2_enabled):
                 player.rect.x += STEP
                 moving = 'R'
                 arrow_moving = 'R'
@@ -594,12 +596,14 @@ while running:
                 if pygame.sprite.groupcollide(player_group, water_tiles_group, False, False) or \
                         pygame.sprite.groupcollide(player_group, tiles_with_trees_group, False, False):
                     player.rect.x -= STEP
-            if event.key == pygame.K_w or event.key == pygame.K_UP:
+            elif (event.key == pygame.K_w or event.key == pygame.K_UP) and not \
+                    (dialogue_1_enabled or dialogue_2_enabled):
                 player.rect.y -= STEP
                 if pygame.sprite.groupcollide(player_group, water_tiles_group, False, False) or \
                         pygame.sprite.groupcollide(player_group, tiles_with_trees_group, False, False):
                     player.rect.y += STEP
-            if event.key == pygame.K_s or event.key == pygame.K_DOWN:
+            elif (event.key == pygame.K_s or event.key == pygame.K_DOWN) and not \
+                    (dialogue_1_enabled or dialogue_2_enabled):
                 player.rect.y += STEP
                 if pygame.sprite.groupcollide(player_group, water_tiles_group, False, False) or \
                         pygame.sprite.groupcollide(player_group, tiles_with_trees_group, False, False):
