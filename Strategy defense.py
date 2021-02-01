@@ -37,6 +37,7 @@ pygame.display.set_icon(pygame.image.load("image/icon.png"))
 music = pygame.mixer.Sound('music/music3.mp3')
 dead_sound = pygame.mixer.Sound('music/Dead_sound.mp3')
 game_over = pygame.mixer.Sound('music/Game_over.mp3')
+game_win = pygame.mixer.Sound('music/win.mp3')
 arrow_throw = pygame.mixer.Sound('music/Arrow_throw.mp3')
 arrow_collide_sprite = pygame.mixer.Sound('music/Arrow_collide_sprite.mp3')
 
@@ -435,8 +436,8 @@ class WalkingEnemyOnY(pygame.sprite.Sprite):
             self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
 
     def walk_y(self):
-        if pygame.sprite.groupcollide(enemy_group, water_tiles_group, False, False) or \
-                pygame.sprite.spritecollide(walking_enemy_on_y[i], tiles_with_trees_group, False):
+        if (pygame.sprite.spritecollide(walking_enemy_on_y[i], water_tiles_group, False)) or \
+                (pygame.sprite.spritecollide(walking_enemy_on_y[i], tiles_with_trees_group, False)):
             ENEMY_STEP_ON_Y[i] = -ENEMY_STEP_ON_Y[i]
         if 1700 >= self.rect.x >= -100 and 1800 >= self.rect.y >= -70:
             self.rect.y -= ENEMY_STEP_ON_Y[i]
@@ -682,7 +683,7 @@ while running:
 
     if dialogue_2_string_number == 5 and not win:
         music.stop()
-        game_over.play().set_volume(0.25)
+        game_win.play().set_volume(0.25)
         win = True
 
 terminate()
